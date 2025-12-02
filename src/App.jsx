@@ -51,7 +51,9 @@ const App = () => {
                 setMovieList(data.results);
             }
 
-            if(query && data.results.length > 0) {
+            // --- FIX ---
+            // Only update search count if the movie has a poster
+            if(query && data.results.length > 0 && data.results[0].poster_path) {
                 try {
                     console.log('🚀 Attempting to update search count...');
                     await updateSearchCount(query, data.results[0]);
