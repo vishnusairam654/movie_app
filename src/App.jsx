@@ -52,7 +52,17 @@ const App = () => {
             }
 
             if(query && data.results.length > 0) {
-                await updateSearchCount(query, data.results[0]);
+                try {
+                    console.log('🚀 Attempting to update search count...');
+                    await updateSearchCount(query, data.results[0]);
+                    console.log('✅ Search count updated successfully');
+                    // Reload trending movies after updating search count
+                    await loadTrendingMovies();
+                } catch (appwriteError) {
+                    console.error('❌ Error updating search count:', appwriteError);
+                    // Show error in development
+                    setErrorMessage(`Search logged, but database update failed: ${appwriteError.message}`);
+                }
             }
         } catch (error) {
             console.error(`Error fetching movies: ${error}`);
@@ -65,17 +75,15 @@ const App = () => {
     const loadTrendingMovies = async () => {
         try {
             const movies = await getTrendingMovies();
-            setTrendingMovies(movies);
+            setTrendingMovies(movies || []); // Ensure it's always an array
         } catch (error) {
             console.error(`Error fetching trending movies: ${error}`);
+            setTrendingMovies([]); // Set to empty array on error
         }
     }
 
     useEffect(() => {
         fetchMovies(debouncedSearchTerm);
-        if (debouncedSearchTerm) {
-            loadTrendingMovies();
-        }
     }, [debouncedSearchTerm]);
 
     useEffect(() => {
@@ -94,7 +102,7 @@ const App = () => {
                     <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
                 </header>
 
-                {trendingMovies.length > 0 && (
+                {trendingMovies && trendingMovies.length > 0 && (
                     <section className="trending">
                         <h2>Trending Movies</h2>
 
@@ -102,7 +110,7 @@ const App = () => {
                             {trendingMovies.map((movie, index) => (
                                 <li key={movie.$id}>
                                     <p>{index + 1}</p>
-                                    <img src={movie.poster_url} alt={movie.title} />
+                                    <img src={movie.poster_url} alt={movie.title || 'Movie'} />
                                 </li>
                             ))}
                         </ul>
